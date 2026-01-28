@@ -4,7 +4,7 @@
 
 *When the brew grows cold and cuts are hard, all eyes look in one direction.*
 
-An MCP server for Magic: The Gathering deck building. Create, read, and update your decks on Archidekt. Search for cards with Scryfall. Let AI help you brew.
+An MCP server for Magic: The Gathering deck building. Create, read, and update your decks on Archidekt. Search for cards with Scryfall. Time for some vibe-brewing!
 
 
 ## Tools
