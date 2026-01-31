@@ -323,45 +323,6 @@ export function createRemoveCardAction(options) {
 }
 
 /**
- * Helper to create a "modify" card action
- * @param {object} options
- * @param {string} options.cardId - Archidekt card ID
- * @param {string} options.deckRelationId - The deck relation ID from the deck
- * @param {number} [options.quantity]
- * @param {Array<string>} [options.categories]
- * @param {string} [options.modifier]
- * @param {string} [options.label]
- * @returns {object}
- */
-export function createModifyCardAction(options) {
-  const {
-    cardId,
-    deckRelationId,
-    quantity = 1,
-    categories = [],
-    modifier = 'Normal',
-    label = ',#656565',
-  } = options;
-
-  return {
-    action: 'modify',
-    cardid: cardId,
-    customCardId: null,
-    categories,
-    patchId: generatePatchId(),
-    modifications: {
-      quantity,
-      modifier,
-      customCmc: null,
-      companion: false,
-      flippedDefault: false,
-      label,
-    },
-    deckRelationId,
-  };
-}
-
-/**
  * Generate a random patch ID for card operations
  * @returns {string}
  */

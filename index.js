@@ -213,16 +213,66 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       const formatNames = { 1: 'Standard', 2: 'Modern', 3: 'Commander', 4: 'Legacy', 5: 'Vintage', 6: 'Pauper', 7: 'Pioneer', 8: 'Brawl', 9: 'Historic', 10: 'Oathbreaker' };
-      const deckList = decks.map(d => {
-        const format = formatNames[d.deckFormat] || 'Unknown';
-        const privacy = d.private ? '(private)' : '(public)';
-        return `- ${d.name} (ID: ${d.id}) - ${format} ${privacy}`;
-      }).join('\n');
+
+      // Fetch details for each deck to get commander and description
+      const deckPreviews = await Promise.all(
+        decks.map(async (d) => {
+          try {
+            const deck = await archidekt.getDeck(accessToken, d.id);
+            const format = formatNames[deck.deckFormat] || 'Unknown';
+            const privacy = deck.private ? '(private)' : '(public)';
+
+            // Extract color identity from deck colors
+            const colorOrder = ['W', 'U', 'B', 'R', 'G'];
+            const colors = d.colors || {};
+            const colorId = colorOrder.filter(c => colors[c] > 0).join('') || 'C';
+
+            // Find commanders (cards in "Commander" category)
+            const commanders = (deck.cards || [])
+              .filter(c => c.categories?.includes('Commander'))
+              .map(c => c.card.oracleCard.name);
+
+            // Build preview
+            let preview = `**${deck.name}** (ID: ${d.id}) - ${colorId} ${format} ${privacy}`;
+            if (commanders.length > 0) {
+              preview += `\n  Commander: ${commanders.join(' & ')}`;
+            }
+            if (deck.description) {
+              let desc = deck.description;
+              // Parse Quill Delta format if present
+              try {
+                const parsed = JSON.parse(desc);
+                if (parsed.ops && Array.isArray(parsed.ops)) {
+                  desc = parsed.ops
+                    .map(op => (typeof op.insert === 'string' ? op.insert : ''))
+                    .join('')
+                    .trim();
+                }
+              } catch {
+                // Not JSON, use as-is
+              }
+              if (desc) {
+                desc = desc.length > 500 ? desc.slice(0, 500) + '...' : desc;
+                preview += `\n  Description: ${desc}`;
+              }
+            }
+            return preview;
+          } catch {
+            // Fallback if deck details fail
+            const format = formatNames[d.deckFormat] || 'Unknown';
+            const privacy = d.private ? '(private)' : '(public)';
+            const colorOrder = ['W', 'U', 'B', 'R', 'G'];
+            const colors = d.colors || {};
+            const colorId = colorOrder.filter(c => colors[c] > 0).join('') || 'C';
+            return `**${d.name}** (ID: ${d.id}) - ${colorId} ${format} ${privacy}`;
+          }
+        })
+      );
 
       return {
         content: [{
           type: 'text',
-          text: `Found ${decks.length} deck(s):\n\n${deckList}`,
+          text: `Found ${decks.length} deck(s):\n\n${deckPreviews.join('\n\n')}`,
         }],
       };
     } catch (error) {
